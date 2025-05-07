@@ -294,7 +294,10 @@ const App = () => {
   return (
     <div className="app-container">
       <div className="chat-app">
-        <h1>Chat Application</h1>
+        <div className="app-header">
+          <img src="/logo192.png" alt="Chat App" className="app-logo" />
+          <h1>Chat Application</h1>
+        </div>
         <div 
           className={`chat-container ${dragActive ? 'drag-active' : ''}`}
           ref={chatContainerRef}

@@ -1,3 +1,47 @@
+
+# AI Chat Application
+
+A modern chat application with AI capabilities, file upload support, and Markdown rendering.
+
+## Customizing the Application Icon
+
+To change the application icon, you'll need to replace the following files in the `public` directory:
+
+1. `favicon.ico` - The main favicon file that appears in browser tabs and bookmarks
+   - Should contain both 16x16 and 32x32 sizes
+   - Can be created using tools like [Favicon.ico Generator](https://www.favicon.ico-generator.org/)
+
+2. `logo192.png` - Used for:
+   - Progressive Web App (PWA) icons
+   - Apple Touch Icon
+   - Size: 192x192 pixels
+   - Format: PNG with transparency
+
+3. `logo512.png` - Used for:
+   - Progressive Web App (PWA) icons on high-resolution devices
+   - Size: 512x512 pixels
+   - Format: PNG with transparency
+
+### Creating Icons
+
+1. Start with a high-resolution image (at least 512x512 pixels)
+2. Create different sizes using an image editor or online tool:
+   - [Favicon Generator](https://realfavicongenerator.net/) - Comprehensive favicon generator
+   - [Adobe Express](https://www.adobe.com/express/create/logo) - Create and resize icons
+   - [Figma](https://www.figma.com/) - Design and export icons
+
+### Testing Icons
+
+After replacing the icon files:
+1. Clear your browser cache
+2. Run `npm run build` to create a production build
+3. Test in different browsers and devices
+4. Verify the icon appears correctly in:
+   - Browser tabs
+   - Bookmarks
+   - Mobile device home screens (if added to home screen)
+   - Progressive Web App installations
+
 # Project Name
 
 ## 1. Project Overview
