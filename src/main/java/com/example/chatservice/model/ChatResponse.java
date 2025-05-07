@@ -18,12 +18,30 @@ public class ChatResponse {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
     private LocalDateTime timestamp;
     
+    private FileInfo fileInfo;
+    
+    public ChatResponse(String text, String sender, LocalDateTime timestamp) {
+        this.text = text;
+        this.sender = sender;
+        this.timestamp = timestamp;
+    }
+    
     public static ChatResponse createBotResponse(String text) {
         return new ChatResponse(
             text,
             "bot",
             LocalDateTime.now()
         );
+    }
+    
+    public static ChatResponse createBotResponseWithFile(String text, FileInfo fileInfo) {
+        ChatResponse response = new ChatResponse(
+            text,
+            "bot",
+            LocalDateTime.now()
+        );
+        response.setFileInfo(fileInfo);
+        return response;
     }
     
     // Add method to get ISO-8601 formatted timestamp for frontend
@@ -34,4 +52,3 @@ public class ChatResponse {
         return timestamp.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 }
-

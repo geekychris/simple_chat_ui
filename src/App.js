@@ -3,15 +3,20 @@ import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './App.css';
+import { FiPaperclip, FiX, FiDownload, FiFile, FiFileText, FiImage, FiVideo, FiMusic } from 'react-icons/fi';
 
 const App = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [file, setFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
   const inputRef = useRef(null);
-
+  const fileInputRef = useRef(null);
   // Scroll to bottom when messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -34,29 +39,158 @@ const App = () => {
       window.removeEventListener('focus', handleWindowFocus);
     };
   }, [messages, loading]);
+
+  // File handling functions
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    handleSelectedFile(selectedFile);
+  };
+
+  const handleSelectedFile = (selectedFile) => {
+    if (!selectedFile) return;
+    
+    // Validate file size (max 10MB)
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      alert('File size exceeds 10MB limit');
+      return;
+    }
+    
+    // Set the file state
+    setFile(selectedFile);
+    
+    // Create preview for image files
+    if (selectedFile.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFilePreview(e.target.result);
+      };
+      reader.readAsDataURL(selectedFile);
+    } else {
+      setFilePreview(null);
+    }
+  };
+
+  const clearFileSelection = () => {
+    setFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleSelectedFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  // Function to get file icon based on file type
+  const getFileIcon = (fileType) => {
+    switch(fileType) {
+      case 'image':
+        return <FiImage size={24} />;
+      case 'video':
+        return <FiVideo size={24} />;
+      case 'audio':
+        return <FiMusic size={24} />;
+      case 'document':
+        return <FiFileText size={24} />;
+      default:
+        return <FiFile size={24} />;
+    }
+  };
+
+  // Function to format file size
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B';
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    else return (bytes / 1048576).toFixed(1) + ' MB';
+  };
+
   const handleInputChange = (e) => {
     setInput(e.target.value);
   };
-
   const sendMessage = async (e) => {
     e.preventDefault();
     
-    if (!input.trim()) return;
+    // Don't send if there's no input and no file
+    if (!input.trim() && !file) return;
     
-    const userMessage = { text: input, sender: 'user', timestamp: new Date().toISOString() };
+    const userMessage = { 
+      text: input.trim(), 
+      sender: 'user', 
+      timestamp: new Date().toISOString(),
+      fileInfo: file ? {
+        originalFileName: file.name,
+        size: file.size,
+        contentType: file.type,
+        fileType: getFileType(file.type)
+      } : null
+    };
     
     // Add user message to chat
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     
-    // Clear input
+    // Clear input and file
     setInput('');
     setLoading(true);
     
     try {
-      // Make API call
-      const response = await axios.post(`http://localhost:8080/ai/chatjson`, {
-        message: userMessage.text
-      });
+      let response;
+      
+      // If there's a file, upload it first
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Upload the file
+        const fileResponse = await axios.post(
+          'http://localhost:8080/api/files/upload',
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            },
+            onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              setUploadProgress(percentCompleted);
+            }
+          }
+        );
+        
+        // Clear the file after upload
+        clearFileSelection();
+        setUploadProgress(0);
+        
+        // Make API call with both message and file info
+        response = await axios.post(`http://localhost:8080/ai/chatjson`, {
+          message: userMessage.text || "Attached a file",
+          fileInfo: fileResponse.data
+        });
+      } else {
+        // Make API call with just the message
+        response = await axios.post(`http://localhost:8080/ai/chatjson`, {
+          message: userMessage.text
+        });
+      }
       
       // Add response to chat
       // Ensure we have valid response data
@@ -65,7 +199,8 @@ const App = () => {
         const botResponse = {
           text: response.data.text || 'No response text received',
           sender: response.data.sender || 'bot',
-          timestamp: response.data.timestamp || new Date().toISOString()
+          timestamp: response.data.timestamp || new Date().toISOString(),
+          fileInfo: response.data.fileInfo || null
         };
         
         setMessages((prevMessages) => [
@@ -122,7 +257,26 @@ const App = () => {
       }, 0);
     }
   };
-
+  
+  // Determine file type based on MIME type
+  const getFileType = (mimeType) => {
+    if (!mimeType) return 'other';
+    
+    if (mimeType.startsWith('image/')) {
+      return 'image';
+    } else if (mimeType.startsWith('video/')) {
+      return 'video';
+    } else if (mimeType.startsWith('audio/')) {
+      return 'audio';
+    } else if (mimeType.startsWith('application/pdf') 
+            || mimeType.startsWith('application/msword')
+            || mimeType.startsWith('application/vnd.openxmlformats-officedocument')
+            || mimeType.startsWith('text/')) {
+      return 'document';
+    } else {
+      return 'other';
+    }
+  };
   // Implement infinite scroll functionality
   const handleScroll = () => {
     // This is a placeholder for loading previous messages when scrolling up
@@ -141,11 +295,14 @@ const App = () => {
     <div className="app-container">
       <div className="chat-app">
         <h1>Chat Application</h1>
-        
         <div 
-          className="chat-container" 
+          className={`chat-container ${dragActive ? 'drag-active' : ''}`}
           ref={chatContainerRef}
           onScroll={handleScroll}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
         >
           {messages.length === 0 ? (
             <div className="empty-chat">
@@ -158,11 +315,44 @@ const App = () => {
                 className={`message ${message.sender === 'user' ? 'user-message' : 'bot-message'} ${message.isError ? 'error-message' : ''}`}
               >
                 <div className="message-content markdown-wrapper">
-                  <div className="markdown-body">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {message.text}
-                    </ReactMarkdown>
-                  </div>
+                  {message.text && (
+                    <div className="markdown-body">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.text}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                  
+                  {message.fileInfo && (
+                    <div className="file-attachment">
+                      <div className="file-preview">
+                        {message.fileInfo.fileType === 'image' ? (
+                          <img 
+                            src={`http://localhost:8080${message.fileInfo.url}`} 
+                            alt={message.fileInfo.originalFileName}
+                            className="image-preview"
+                          />
+                        ) : (
+                          <div className="file-icon">
+                            {getFileIcon(message.fileInfo.fileType)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="file-info">
+                        <div className="file-name">{message.fileInfo.originalFileName}</div>
+                        <div className="file-size">{formatFileSize(message.fileInfo.size)}</div>
+                      </div>
+                      <a 
+                        href={`http://localhost:8080${message.fileInfo.url}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="file-download"
+                        download
+                      >
+                        <FiDownload size={18} />
+                      </a>
+                    </div>
+                  )}
                 </div>
                 <div className="message-info">
                   <span className="sender">{message.sender === 'user' ? 'You' : 'Bot'}</span>
@@ -193,21 +383,71 @@ const App = () => {
               </div>
             </div>
           )}
-          
           <div ref={messagesEndRef} />
         </div>
+        
+        {/* File upload preview */}
+        {file && (
+          <div className="file-upload-preview">
+            <div className="file-preview-header">
+              <span className="file-name">{file.name}</span>
+              <button 
+                type="button" 
+                className="remove-file-btn"
+                onClick={clearFileSelection}
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+            <div className="file-preview-content">
+              {filePreview ? (
+                <img src={filePreview} alt="Preview" className="image-preview" />
+              ) : (
+                <div className="file-icon">
+                  {getFileIcon(getFileType(file.type))}
+                </div>
+              )}
+              <div className="file-info">
+                <span className="file-size">{formatFileSize(file.size)}</span>
+              </div>
+            </div>
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="upload-progress">
+                <div 
+                  className="upload-progress-bar" 
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+                <span className="upload-progress-text">{uploadProgress}%</span>
+              </div>
+            )}
+          </div>
+        )}
         
         <form className="input-container" onSubmit={sendMessage}>
           <input
             type="text"
             value={input}
             onChange={handleInputChange}
-            placeholder="Type your message here..."
+            placeholder={file ? "Add a message or send just the file..." : "Type your message here..."}
             disabled={loading}
             autoFocus={true}
             ref={inputRef}
           />
-          <button type="submit" disabled={loading || !input.trim()}>
+          
+          {/* File input with custom button */}
+          <label className="file-input-label" htmlFor="file-input">
+            <FiPaperclip size={20} />
+            <input
+              id="file-input"
+              type="file"
+              onChange={handleFileChange}
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              disabled={loading}
+            />
+          </label>
+          
+          <button type="submit" disabled={loading || (!input.trim() && !file)}>
             Send
           </button>
         </form>
@@ -217,4 +457,3 @@ const App = () => {
 };
 
 export default App;
-
