@@ -1,6 +1,8 @@
 package com.example.chatservice.service;
 
+import com.example.chatservice.model.ChatRequest;
 import com.example.chatservice.model.ChatResponse;
+import com.example.chatservice.model.FileInfo;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -10,7 +12,6 @@ import java.util.Random;
 
 @Service
 public class ChatService {
-
     private final Random random = new Random();
     
     private final List<String> mockResponses = Arrays.asList(
@@ -66,7 +67,8 @@ public class ChatService {
         "> Remember that the best solution depends on your specific context.\n\n" +
         "For more information, visit [our documentation](https://example.com)."
     );
-    public ChatResponse generateResponse(String message) {
+    
+    public ChatResponse processMessage(ChatRequest request) {
         // Simulate processing time
         try {
             Thread.sleep(1000);
@@ -74,11 +76,39 @@ public class ChatService {
             Thread.currentThread().interrupt();
         }
         
-        // Get a random mock response text
-        String responseText = mockResponses.get(random.nextInt(mockResponses.size()));
+        StringBuilder responseText = new StringBuilder();
         
-        // Return a structured ChatResponse object
-        return new ChatResponse(responseText, "bot", LocalDateTime.now());
+        // Get a random mock response
+        String mockResponse = mockResponses.get(random.nextInt(mockResponses.size()));
+        responseText.append(mockResponse).append("\n\n");
+        
+        // Add information about the user's message
+        responseText.append("---\n\n")
+                   .append("Your message was:\n\n```\n")
+                   .append(request.getMessage())
+                   .append("\n```\n\n");
+        
+        // If there's a file, add information about it
+        if (request.getFileInfo() != null) {
+            FileInfo fileInfo = request.getFileInfo();
+            responseText.append("I also received your file:\n\n")
+                       .append("| Property | Value |\n")
+                       .append("|----------|-------|\n")
+                       .append("| Name | `").append(fileInfo.getOriginalFileName()).append("` |\n")
+                       .append("| Type | `").append(fileInfo.getFileType()).append("` |\n")
+                       .append("| Size | `").append(formatFileSize(fileInfo.getSize())).append("` |\n");
+            
+            return ChatResponse.createBotResponseWithFile(responseText.toString(), request.getFileInfo());
+        }
+        
+        return ChatResponse.createBotResponse(responseText.toString());
+    }
+    
+    private String formatFileSize(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
+        if (bytes < 1024 * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
+        return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
     }
 }
 

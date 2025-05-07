@@ -44,7 +44,6 @@ public class ChatResponse {
         return response;
     }
     
-    // Add method to get ISO-8601 formatted timestamp for frontend
     public String getFormattedTimestamp() {
         if (timestamp == null) {
             return null;

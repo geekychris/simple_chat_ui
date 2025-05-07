@@ -161,7 +161,7 @@ const App = () => {
         
         // Upload the file
         const fileResponse = await axios.post(
-          'http://localhost:8080/api/files/upload',
+          '/api/files/upload',
           formData,
           {
             headers: {
@@ -181,19 +181,19 @@ const App = () => {
         setUploadProgress(0);
         
         // Make API call with both message and file info
-        response = await axios.post(`http://localhost:8080/ai/chatjson`, {
-          message: userMessage.text || "Attached a file",
+        // Make API call with both message and file info
+        response = await axios.post('/api/chat/message', {
+          message: input.trim(),
           fileInfo: fileResponse.data
         });
       } else {
         // Make API call with just the message
-        response = await axios.post(`http://localhost:8080/ai/chatjson`, {
-          message: userMessage.text
+        response = await axios.post('/api/chat/message', {
+          message: input.trim()
         });
       }
       
       // Add response to chat
-      // Ensure we have valid response data
       if (response.data && typeof response.data === 'object') {
         // Extract response data with fallbacks for missing fields
         const botResponse = {
@@ -331,9 +331,9 @@ const App = () => {
                       <div className="file-preview">
                         {message.fileInfo.fileType === 'image' ? (
                           <img 
-                            src={`http://localhost:8080${message.fileInfo.url}`} 
-                            alt={message.fileInfo.originalFileName}
+                            src={message.fileInfo.url.startsWith('/') ? message.fileInfo.url : `/${message.fileInfo.url}`} 
                             className="image-preview"
+                            alt="Uploaded file"
                           />
                         ) : (
                           <div className="file-icon">
@@ -346,8 +346,7 @@ const App = () => {
                         <div className="file-size">{formatFileSize(message.fileInfo.size)}</div>
                       </div>
                       <a 
-                        href={`http://localhost:8080${message.fileInfo.url}`}
-                        target="_blank"
+                        href={message.fileInfo.url.startsWith('/') ? message.fileInfo.url : `/${message.fileInfo.url}`}
                         rel="noopener noreferrer"
                         className="file-download"
                         download
