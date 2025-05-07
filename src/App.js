@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './App.css';
 
 const App = () => {
@@ -57,23 +59,57 @@ const App = () => {
       });
       
       // Add response to chat
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          text: response.data.text,
-          sender: response.data.sender,
-          timestamp: response.data.timestamp
-        }
-      ]);
+      // Ensure we have valid response data
+      if (response.data && typeof response.data === 'object') {
+        // Extract response data with fallbacks for missing fields
+        const botResponse = {
+          text: response.data.text || 'No response text received',
+          sender: response.data.sender || 'bot',
+          timestamp: response.data.timestamp || new Date().toISOString()
+        };
+        
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          botResponse
+        ]);
+      } else {
+        // Handle unexpected response format
+        console.error('Unexpected response format:', response);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            text: 'Received an invalid response format from the server.',
+            sender: 'bot',
+            timestamp: new Date().toISOString(),
+            isError: true
+          }
+        ]);
+      }
     } catch (error) {
+      // Log the error details for debugging
       console.error('Error fetching response:', error);
+      
+      // Create a user-friendly error message
+      let errorMessage = 'Sorry, there was an error processing your request.';
+      
+      // Add more specific error info if available
+      if (error.response) {
+        // Server responded with an error status
+        errorMessage += ` Server returned: ${error.response.status} ${error.response.statusText}`;
+      } else if (error.request) {
+        // Request was made but no response received
+        errorMessage += ' No response received from the server. Please check your connection.';
+      } else {
+        // Something else caused the error
+        errorMessage += ' ' + (error.message || 'Unknown error occurred.');
+      }
       
       // Add error message to chat
       setMessages((prevMessages) => [
         ...prevMessages,
         {
-          text: 'Sowry, there was an error processing your request.',
-          sender: error,
+          text: errorMessage,
+          sender: 'bot',
           timestamp: new Date().toISOString(),
           isError: true
         }
@@ -86,6 +122,7 @@ const App = () => {
       }, 0);
     }
   };
+
   // Implement infinite scroll functionality
   const handleScroll = () => {
     // This is a placeholder for loading previous messages when scrolling up
@@ -120,19 +157,31 @@ const App = () => {
                 key={index} 
                 className={`message ${message.sender === 'user' ? 'user-message' : 'bot-message'} ${message.isError ? 'error-message' : ''}`}
               >
-                <div className="message-content">
-                  <p>{message.text}</p>
+                <div className="message-content markdown-wrapper">
+                  <div className="markdown-body">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.text}
+                    </ReactMarkdown>
+                  </div>
                 </div>
                 <div className="message-info">
                   <span className="sender">{message.sender === 'user' ? 'You' : 'Bot'}</span>
                   <span className="timestamp">
-                    {new Date(message.timestamp).toLocaleTimeString()}
+                    {message.timestamp ? 
+                      (() => {
+                        try {
+                          return new Date(message.timestamp).toLocaleTimeString();
+                        } catch (e) {
+                          console.warn('Invalid timestamp format:', message.timestamp);
+                          return 'Unknown time';
+                        }
+                      })() 
+                      : 'Unknown time'}
                   </span>
                 </div>
               </div>
             ))
           )}
-          
           {loading && (
             <div className="message bot-message loading-message">
               <div className="message-content">

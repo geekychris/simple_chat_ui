@@ -1,10 +1,10 @@
-
 package com.example.chatservice.controller;
 
 import com.example.chatservice.model.ChatRequest;
 import com.example.chatservice.model.ChatResponse;
 import com.example.chatservice.service.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,16 +18,13 @@ public class ChatController {
         this.chatService = chatService;
     }
 
-    @GetMapping("/chatjson")
-    public String handleChatGet(@RequestParam String message) {
-        // For compatibility with existing frontend
+    @GetMapping(value = "/chatjson", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ChatResponse handleChatGet(@RequestParam String message) {
         return chatService.generateResponse(message);
     }
 
-    @PostMapping("/chatjson")
+    @PostMapping(value = "/chatjson", produces = MediaType.APPLICATION_JSON_VALUE)
     public ChatResponse handleChatPost(@RequestBody ChatRequest request) {
-        String response = chatService.generateResponse(request.getMessage());
-        return ChatResponse.createBotResponse(response);
+        return chatService.generateResponse(request.getMessage());
     }
 }
-

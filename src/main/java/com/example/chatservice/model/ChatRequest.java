@@ -1,4 +1,3 @@
-
 package com.example.chatservice.model;
 
 import lombok.AllArgsConstructor;
@@ -11,4 +10,3 @@ import lombok.NoArgsConstructor;
 public class ChatRequest {
     private String message;
 }
-
