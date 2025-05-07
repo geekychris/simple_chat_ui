@@ -8,12 +8,30 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Scroll to bottom when messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Focus input when component mounts and after each message
+  useEffect(() => {
+    // Focus on input element
+    inputRef.current?.focus();
+    
+    // Add event listener to focus input when window regains focus
+    const handleWindowFocus = () => {
+      inputRef.current?.focus();
+    };
+    
+    window.addEventListener('focus', handleWindowFocus);
+    
+    // Clean up event listener
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [messages, loading]);
   const handleInputChange = (e) => {
     setInput(e.target.value);
   };
@@ -34,17 +52,17 @@ const App = () => {
     
     try {
       // Make API call
-      const response = await axios.get(`http://localhost:8080/ai/chatjson`, {
-        params: { message: userMessage.text }
+      const response = await axios.post(`http://localhost:8080/ai/chatjson`, {
+        message: userMessage.text
       });
       
       // Add response to chat
       setMessages((prevMessages) => [
         ...prevMessages,
         {
-          text: response.data,
-          sender: 'bot',
-          timestamp: new Date().toISOString()
+          text: response.data.text,
+          sender: response.data.sender,
+          timestamp: response.data.timestamp
         }
       ]);
     } catch (error) {
@@ -62,9 +80,12 @@ const App = () => {
       ]);
     } finally {
       setLoading(false);
+      // Refocus the input field after response is received
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
     }
   };
-
   // Implement infinite scroll functionality
   const handleScroll = () => {
     // This is a placeholder for loading previous messages when scrolling up
@@ -134,6 +155,8 @@ const App = () => {
             onChange={handleInputChange}
             placeholder="Type your message here..."
             disabled={loading}
+            autoFocus={true}
+            ref={inputRef}
           />
           <button type="submit" disabled={loading || !input.trim()}>
             Send
