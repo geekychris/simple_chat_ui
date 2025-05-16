@@ -253,4 +253,32 @@ public class ChatController {
         conversationRepository.delete(conversation);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Update a conversation's title
+     */
+    @PostMapping("/conversations/{id}")
+    public ResponseEntity<Conversation> updateConversation(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+
+        User user = getCurrentUser();
+
+        Conversation conversation = conversationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation not found"));
+
+        // Check if conversation belongs to the current user
+        if (!conversation.getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to this conversation");
+        }
+
+        String newTitle = request.get("title");
+        if (newTitle == null || newTitle.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Title cannot be empty");
+        }
+
+        conversation.setTitle(newTitle.trim());
+        Conversation updatedConversation = conversationRepository.save(conversation);
+        return ResponseEntity.ok(updatedConversation);
+    }
 }
