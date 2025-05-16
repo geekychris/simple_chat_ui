@@ -10,4 +10,14 @@ import lombok.NoArgsConstructor;
 public class ChatRequest {
     private String message;
     private FileInfo fileInfo;
+    private Long conversationId;
+    
+    public ChatRequest(String message) {
+        this.message = message;
+    }
+    
+    public ChatRequest(String message, FileInfo fileInfo) {
+        this.message = message;
+        this.fileInfo = fileInfo;
+    }
 }

@@ -1,6 +1,7 @@
 package com.example.chatservice.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +13,7 @@ import java.time.format.DateTimeFormatter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatResponse {
-    private String text;
+    private String message;
     private String sender;
     
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
@@ -20,23 +21,32 @@ public class ChatResponse {
     
     private FileInfo fileInfo;
     
-    public ChatResponse(String text, String sender, LocalDateTime timestamp) {
-        this.text = text;
+    private Long conversationId;
+    
+    public ChatResponse(String message, String sender, LocalDateTime timestamp) {
+        this.message = message;
         this.sender = sender;
         this.timestamp = timestamp;
     }
     
-    public static ChatResponse createBotResponse(String text) {
+    public ChatResponse(String message, String sender, LocalDateTime timestamp, Long conversationId) {
+        this.message = message;
+        this.sender = sender;
+        this.timestamp = timestamp;
+        this.conversationId = conversationId;
+    }
+    
+    public static ChatResponse createBotResponse(String message) {
         return new ChatResponse(
-            text,
+            message,
             "bot",
             LocalDateTime.now()
         );
     }
     
-    public static ChatResponse createBotResponseWithFile(String text, FileInfo fileInfo) {
+    public static ChatResponse createBotResponseWithFile(String message, FileInfo fileInfo) {
         ChatResponse response = new ChatResponse(
-            text,
+            message,
             "bot",
             LocalDateTime.now()
         );
@@ -44,6 +54,25 @@ public class ChatResponse {
         return response;
     }
     
+    public static ChatResponse createBotResponseWithConversation(String message, Long conversationId) {
+        return new ChatResponse(
+            message,
+            "bot",
+            LocalDateTime.now(),
+            conversationId
+        );
+    }
+    
+    public static ChatResponse createUserResponse(String message, Long conversationId) {
+        return new ChatResponse(
+            message,
+            "user",
+            LocalDateTime.now(),
+            conversationId
+        );
+    }
+
+    @JsonIgnore
     public String getFormattedTimestamp() {
         if (timestamp == null) {
             return null;

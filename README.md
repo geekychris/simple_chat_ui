@@ -1,3 +1,112 @@
+# Secure Chat Application
+
+A full-stack chat application with user authentication, conversation management, and real-time messaging.
+
+## Project Status
+
+This project implements:
+1. **User Authentication System**: Register, login, and secure routes
+2. **Conversation Management**: Create, view, and delete conversations
+3. **Chat Interface**: Real-time messaging with conversation history
+4. **Responsive Design**: Mobile and desktop friendly interface
+
+The application is ready for testing. The backend provides secure authentication with JWT tokens, and the frontend includes a complete user interface with protected routes.
+
+## Features
+
+- User registration and login with JWT authentication
+- Secure password storage with BCrypt
+- Conversation management (create, read, delete)
+- Persistent chat history by user
+- Responsive UI for desktop and mobile
+- Markdown support in messages
+
+## Technology Stack
+
+### Backend
+- Spring Boot 3.x
+- Spring Security with JWT
+- JPA with H2 database
+- Spring Web
+- Lombok
+
+### Frontend
+- React 18
+- React Router v6
+- Axios for API calls
+- React Icons
+- CSS with responsive design
+
+## Setup Instructions
+
+### Prerequisites
+- Java Development Kit (JDK) 17+
+- Node.js and npm
+- Maven
+
+### Running the Application
+
+1. **Clone the repository**
+   ```
+   git clone <repository-url>
+   cd simple_chat_ui
+   ```
+
+2. **Build and run the application**
+   ```
+   mvn clean install
+   mvn spring-boot:run
+   ```
+
+3. **Access the application**
+   Open your browser and navigate to:
+   ```
+   http://localhost:8080
+   ```
+
+## Usage
+
+1. **Register a new account**
+   - Click on Register to create a new account
+   - Enter a username and password
+
+2. **Login to your account**
+   - Use your username and password to login
+
+3. **Create a new conversation**
+   - Click on the "+" button in the sidebar to create a new conversation
+
+4. **Chat in a conversation**
+   - Select a conversation from the sidebar
+   - Type your message and press Enter or click Send
+
+5. **Logout**
+   - Click the logout icon in the sidebar header
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login a user
+
+### Chat
+- `POST /api/chat/message` - Send a message
+- `GET /api/chat/conversations` - Get all conversations for the current user
+- `GET /api/chat/conversations/{id}` - Get a specific conversation
+- `POST /api/chat/conversations` - Create a new conversation
+- `DELETE /api/chat/conversations/{id}` - Delete a conversation
+
+## Security
+
+- JWT token-based authentication
+- Password encryption with BCrypt
+- Protected API endpoints
+- CSRF protection disabled for stateless API
+
+## License
+
+This project is licensed under the MIT License
+
 
 # AI Chat Application
 
