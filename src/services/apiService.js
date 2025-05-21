@@ -59,7 +59,7 @@ export const deleteConversation = async (id) => {
 
 export const updateConversation = async (id, title) => {
   try {
-    const response = await axios.put(`/chat/conversations/${id}`, { title });
+    const response = await axios.post(`/chat/conversations/${id}`, { id, title });
     return response.data;
   } catch (error) {
     console.error(`Error updating conversation ${id}:`, error);

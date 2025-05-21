@@ -257,8 +257,10 @@ public class ChatController {
     /**
      * Update a conversation's title
      */
-    @PutMapping("/conversations/{id}")
-    public ResponseEntity<Conversation> updateConversationTitle(@PathVariable Long id, @RequestBody Map<String, String> request) {
+    @PostMapping("/conversations/{id}")
+    public ResponseEntity<Conversation> updateConversation(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
         User user = getCurrentUser();
 
         Conversation conversation = conversationRepository.findById(id)
@@ -270,11 +272,12 @@ public class ChatController {
         }
 
         String newTitle = request.get("title");
-        if (newTitle == null || newTitle.isEmpty()) {
+        if (newTitle == null || newTitle.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Title cannot be empty");
         }
 
-        conversation.setTitle(newTitle);
+        conversation.setTitle(newTitle.trim());
+
         Conversation updatedConversation = conversationRepository.save(conversation);
         return ResponseEntity.ok(updatedConversation);
     }
