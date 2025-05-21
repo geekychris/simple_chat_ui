@@ -261,7 +261,6 @@ public class ChatController {
     public ResponseEntity<Conversation> updateConversation(
             @PathVariable Long id,
             @RequestBody Map<String, String> request) {
-
         User user = getCurrentUser();
 
         Conversation conversation = conversationRepository.findById(id)
@@ -278,6 +277,7 @@ public class ChatController {
         }
 
         conversation.setTitle(newTitle.trim());
+
         Conversation updatedConversation = conversationRepository.save(conversation);
         return ResponseEntity.ok(updatedConversation);
     }
