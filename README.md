@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="Simple Chat Ui logo" width="180">
+</p>
+
 # Secure Chat Application
 
 A full-stack chat application with user authentication, conversation management, and real-time messaging.
